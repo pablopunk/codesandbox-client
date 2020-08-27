@@ -567,6 +567,10 @@ export const _setGitChanges: Action = ({ state }) => {
   };
 
   state.editor.currentSandbox!.modules.forEach(module => {
+    // We dot not support binary changes
+    if (module.isBinary) {
+      return;
+    }
     if (!(module.path in state.git.sourceModulesByPath)) {
       changes.added.push(module.path);
     } else if (
@@ -593,6 +597,14 @@ export const _evaluateGitChanges: AsyncAction<
 > = async ({ state }, changes) => {
   const conflicts = changes.reduce<GitFileCompare[]>((aggr, change) => {
     const path = '/' + change.filename;
+
+    // We dot not support binary resolving
+    if (
+      state.editor.modulesByPath[path] &&
+      (state.editor.modulesByPath[path] as Module).isBinary
+    ) {
+      return aggr;
+    }
 
     // We are in conflict if a file has been removed in the source and the
     // sandbox has made changes to it
